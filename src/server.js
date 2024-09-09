@@ -3,8 +3,12 @@ import express from "express"
 import cors from "cors"
 
 //models
-import models from "./models/postagemModel.js"
+import "./models/postagemModel.js";
+import "./models/usuarioModel.js";
+
+//import rotas
 import postRoutes from "./routes/postRouter.js"
+import userRoutes from "./routes/userRouter.js"
 
 //importação da conexão do database
 import conn from "./config/conn.js";
@@ -17,7 +21,9 @@ app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+//rotas
 app.use("/postagens", postRoutes);
+app.use("/usuarios", userRoutes);
 
 //conexão com o banco 
 conn.sync().then(()=>{
