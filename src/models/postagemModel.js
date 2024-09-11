@@ -35,7 +35,8 @@ const postagem = conn.define(
         allowNull: true
     }
 },{
-    tableName: "postagem"
+    timestamps:true
 }
 )
+tableName: "postagem"
 export default postagem

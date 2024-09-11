@@ -6,6 +6,17 @@ import multer from 'multer';
 import path from 'path';
 
 // Configuração do Multer para upload de imagem
+
+export const registerUserSchema = z.object({
+    nome: z.string().min(1, "Nome é obrigatório"), // Nome completo obrigatório
+    email: z.string().email("E-mail inválido"),    // E-mail deve ser válido
+    senha: z.string()
+        .min(8, "A senha deve ter no mínimo 8 caracteres")
+        .regex(/[a-zA-Z]/, "A senha deve conter pelo menos uma letra")
+        .regex(/[0-9]/, "A senha deve conter pelo menos um número"),  // Senha com força mínima
+    imagem: z.string().optional(),                 // Imagem é opcional
+    papel: z.enum(['administrador', 'autor', 'leitor']).optional().default('leitor'), // Papel com valor padrão
+});
 const upload = multer({
     storage: multer.diskStorage({
         destination: (req, file, cb) => {
@@ -27,23 +38,19 @@ const upload = multer({
         cb(new Error('Somente arquivos JPEG, JPG e PNG são permitidos!'));
     }
 }).single('imagem');
-
 // Esquemas de validação com Zod
 const idSchema = z.string().uuid('ID inválido');
-
 const createPostSchema = z.object({
     titulo: z.string().min(1, 'O título é obrigatório'),
     conteudo: z.string().min(1, 'O conteúdo é obrigatório'),
     autor: z.string().min(1, 'O autor é obrigatório'),
     imagem: z.string().url('A imagem deve ser uma URL válida').optional()
 });
-
 const updatePostSchema = z.object({
     titulo: z.string().min(1, 'O título é obrigatório').optional(),
     conteudo: z.string().min(1, 'O conteúdo é obrigatório').optional(),
     imagem: z.string().url('A imagem deve ser uma URL válida').optional()
 });
-
 // RF01 - Criar Postagem
 export const criarPostagem = async (req, res) => {
     try {
@@ -71,7 +78,6 @@ export const criarPostagem = async (req, res) => {
         return res.status(500).json({ message: 'Erro ao criar postagem', error: error.message });
     }
 };
-
 // RF02 - Listar Postagens com Paginação
 export const listarPostagens = async (req, res) => {
     try {
@@ -97,7 +103,6 @@ export const listarPostagens = async (req, res) => {
         return res.status(500).json({ message: 'Erro ao listar postagens', error: error.message });
     }
 };
-
 // RF03 - Buscar Postagem por ID
 export const buscarPostagemPorId = async (req, res) => {
     try {
@@ -117,7 +122,6 @@ export const buscarPostagemPorId = async (req, res) => {
         return res.status(500).json({ message: 'Erro ao buscar postagem', error: error.message });
     }
 };
-
 // RF04 - Atualizar Postagem
 export const atualizarPostagem = async (req, res) => {
     try {
@@ -138,7 +142,6 @@ export const atualizarPostagem = async (req, res) => {
         return res.status(500).json({ message: 'Erro ao atualizar postagem', error: error.message });
     }
 };
-
 // RF05 - Excluir Postagem
 export const excluirPostagem = async (req, res) => {
     try {
@@ -158,7 +161,6 @@ export const excluirPostagem = async (req, res) => {
         return res.status(500).json({ message: 'Erro ao excluir postagem', error: error.message });
     }
 };
-
 // RF06 - Upload de Imagem
 export const uploadImagemPostagem = (req, res) => {
     try {
@@ -193,3 +195,34 @@ export const uploadImagemPostagem = (req, res) => {
         return res.status(500).json({ message: 'Erro ao fazer upload da imagem', error: error.message });
     }
 };
+export const listarPostagensPorAutor = async (req, res) => {
+    try {
+        const { autor } = req.query;
+
+        // Busca as postagens associadas ao autor especificado
+        const postagens = await postagem.findAll({ where: { autorId: autor } });
+
+        if (!postagens || postagens.length === 0) {
+            return res.status(404).json({ message: 'Nenhuma postagem encontrada para este autor' });
+        }
+
+        return res.status(200).json({ postagens });
+    } catch (error) {
+        return res.status(500).json({ message: 'Erro ao listar postagens', error: error.message });
+    }
+};
+export const verificarAutenticacao = (req, res, next) => {
+    const usuario = req.usuario; // Supondo que o usuário autenticado está anexado à requisição
+    if (!usuario) {
+        return res.status(401).json({ message: 'Usuário não autenticado' });
+    }
+    next();
+};
+// Middleware para verificar se o usuário tem permissão para criar postagens
+export const verificarPermissao = (req, res, next) => {
+    const { papel } = req.usuario;
+    if (papel !== 'autor' && papel !== 'administrador') {
+        return res.status(403).json({ message: 'Acesso negado. Apenas autores e administradores podem criar postagens.' });
+    }
+    next();
+}

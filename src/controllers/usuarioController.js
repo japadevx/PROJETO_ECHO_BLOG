@@ -10,6 +10,7 @@ const registerUserSchema = z.object({
     nome: z.string().min(1, 'O nome é obrigatório'),
     email: z.string().email('E-mail inválido'),
     senha: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres'),
+    imagem: z.string().optional("insira a URL da imagem"),
     papel: z.enum(['administrador', 'autor', 'leitor']).optional().default('leitor')
 });
 
